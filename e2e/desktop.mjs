@@ -120,6 +120,22 @@ try {
   check('plugin settings stay per device', !existsSync(join(RUN, 'dav/Shared Vault/.obsidian/plugins/blax-sync/data.json')))
   check('plugin state stays local', !existsSync(join(RUN, 'dav/Shared Vault/.obsidian/plugins/blax-sync/state.json')))
   log('status bar desktop:', await statusBar(A))
+  // Settings page (declarative on 1.13+) and the settings search. Read through the settings
+  // object: under Xvfb its modal can sit in a hidden window (see README).
+  const tabText = await A.page.evaluate(async () => {
+    window.app.setting.open(); window.app.setting.openTabById('blax-sync')
+    await new Promise(r => setTimeout(r, 800))
+    return window.app.setting.activeTab?.containerEl?.textContent ?? ''
+  })
+  check('settings page renders with current status', ['Sync now', 'Synced', 'Add another device', 'Sync plugins and settings', 'Ignore'].every(t => tabText.includes(t)) && !tabText.includes('Not set up yet'), tabText.slice(0, 80))
+  const hits = await A.page.evaluate(async () => {
+    const st = window.app.setting
+    st.searchComponent.setValue('QR code'); st.onSearchChanged()
+    await new Promise(r => setTimeout(r, 800))
+    return st.searchResultsEl?.textContent ?? ''
+  })
+  check('settings search finds "Add another device" by "QR code"', hits.includes('Add another device'), hits.slice(0, 80))
+  await A.page.evaluate(() => window.app.setting.close())
   await shot(A, '4-after-first-sync')
 
   const B = await launch('laptop', profile('laptop', B_dir, 'bbbbbbbbbbbbbbbb'), 9302)

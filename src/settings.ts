@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting } from 'obsidian'
+import { App, PluginSettingTab, Setting, type SettingDefinitionItem } from 'obsidian'
 import type BlaxSync from './main'
 
 export interface BlaxSyncSettings {
@@ -23,6 +23,38 @@ export const DEFAULT_SETTINGS: BlaxSyncSettings = {
 
 export class BlaxSyncSettingTab extends PluginSettingTab {
   constructor(app: App, private plugin: BlaxSync) { super(app, plugin) }
+
+  // Obsidian 1.13+: declarative settings, which also makes them findable in the settings
+  // search. Older versions don't call this and render display() below instead.
+  getSettingDefinitions(): SettingDefinitionItem[] {
+    const s = this.plugin.settings
+    return [
+      { name: 'Sync now', desc: s.configured ? `${this.plugin.statusText()} · ${s.webdav.url} → ${s.webdav.folder}` : 'Not set up yet.', aliases: ['status', 'webdav'], disabled: () => !this.plugin.settings.configured, action: () => { void this.plugin.runSync() } },
+      { name: s.configured ? 'Run setup again' : 'Set up', desc: 'Storage, credentials, plugins: the three-step wizard.', aliases: ['wizard', 'server', 'password'], action: () => this.plugin.openWizard() },
+      { name: 'Add another device', desc: 'Shows a QR code and a setup link with a one-time code, so the next device needs no typing.', aliases: ['qr', 'setup link', 'phone'], disabled: () => !this.plugin.settings.configured, action: () => this.plugin.openAddDevice() },
+      { type: 'group', heading: 'Sync', items: [
+        { name: 'Sync plugins and settings', desc: 'Community plugins, their settings, themes, snippets, hotkeys and appearance. Workspace layout stays per device.', control: { type: 'toggle', key: 'syncConfig' } },
+        { name: 'Sync every … minutes', desc: '0 turns the timer off. A sync also runs on start.', control: { type: 'number', key: 'intervalMinutes', min: 0, step: 1 } },
+        { name: 'Sync after changes', desc: 'Runs a sync 20 seconds after you stop editing.', control: { type: 'toggle', key: 'syncOnChange' } },
+        { name: 'Ignore', desc: 'One pattern per line, relative to the vault: Private/**, *.tmp', control: { type: 'textarea', key: 'ignore', rows: 4 } },
+      ] },
+    ]
+  }
+
+  getControlValue(key: string): unknown {
+    const v = (this.plugin.settings as unknown as Record<string, unknown>)[key]
+    return key === 'ignore' && Array.isArray(v) ? v.join('\n') : v
+  }
+
+  async setControlValue(key: string, value: unknown): Promise<void> {
+    const s = this.plugin.settings
+    if (key === 'syncConfig' || key === 'syncOnChange') s[key] = value === true
+    else if (key === 'intervalMinutes') s.intervalMinutes = Math.max(0, Math.floor(Number(value) || 0))
+    else if (key === 'ignore') s.ignore = (typeof value === 'string' ? value : '').split('\n')
+    else return
+    await this.plugin.saveSettings()
+    if (key === 'intervalMinutes') this.plugin.reschedule()
+  }
 
   display(): void {
     const { containerEl } = this

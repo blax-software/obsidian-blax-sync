@@ -23,6 +23,7 @@ export default class BlaxSync extends Plugin {
   private timer: number | null = null
   private changeTimer: number | null = null
   private fs: ObsidianFs | null = null
+  private settingTab: BlaxSyncSettingTab | null = null
 
   private get statePath() { return normalizePath(`${this.app.vault.configDir}/plugins/${this.manifest.id}/state.json`) }
 
@@ -38,7 +39,8 @@ export default class BlaxSync extends Plugin {
     this.addCommand({ id: 'add-device', name: 'Add another device (setup link and QR code)', callback: () => this.openAddDevice() })
     // obsidian://blax-sync-setup?d=… from a QR code or a pasted link
     this.registerObsidianProtocolHandler(PROTOCOL_ACTION, params => { new JoinModal(this.app, this, params.d ?? null).open() })
-    this.addSettingTab(new BlaxSyncSettingTab(this.app, this))
+    this.settingTab = new BlaxSyncSettingTab(this.app, this)
+    this.addSettingTab(this.settingTab)
 
     this.app.workspace.onLayoutReady(() => {
       if (!this.settings.configured) this.openWizard()
@@ -70,7 +72,7 @@ export default class BlaxSync extends Plugin {
     const data = ((await this.loadData()) ?? {}) as Partial<BlaxSyncSettings>
     this.settings = { ...DEFAULT_SETTINGS, ...data, webdav: { ...DEFAULT_SETTINGS.webdav, ...(data.webdav ?? {}) } }
   }
-  async saveSettings() { await this.saveData(this.settings) }
+  async saveSettings() { await this.saveData(this.settings); this.renderStatus() }
 
   // Device-local: never synced (filter excludes it), so each device keeps its own base.
   private async loadState() {
@@ -116,6 +118,9 @@ export default class BlaxSync extends Plugin {
       : this.running || !this.lastRun || this.lastRun.ok ? this.statusText() : 'Sync failed'
     this.statusEl.setText(`⇅ ${short}`)
     this.statusEl.title = this.statusText()
+    // Obsidian 1.13+ caches the declarative settings; re-evaluate so status and labels stay current.
+    const tab = this.settingTab as unknown as { update?: () => void } | null
+    tab?.update?.()
   }
 
   async runSync(opts: { allowDeletions?: boolean } = {}) {
