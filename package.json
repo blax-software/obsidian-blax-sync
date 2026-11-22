@@ -1,6 +1,6 @@
 {
   "name": "obsidian-blax-sync",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Sync your vault, plugins and settings to your own WebDAV server. Set up in three steps, add more devices with a QR code. Edits are never missed and nothing is ever hard-deleted.",
   "main": "main.js",
   "type": "module",
