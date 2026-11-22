@@ -1,6 +1,8 @@
 import { Notice, Platform, Plugin, normalizePath, type TAbstractFile } from 'obsidian'
 import { BlaxSyncSettingTab, DEFAULT_SETTINGS, type BlaxSyncSettings } from './settings'
 import { SetupWizard } from './wizard'
+import { AddDeviceModal, JoinModal } from './device-link'
+import { PROTOCOL_ACTION } from './setup-link'
 import { ObsidianFs } from './obsidian-fs'
 import { obsidianRequest } from './request'
 import { makeDirFilter, makeFilter } from './sync/filter'
@@ -33,6 +35,9 @@ export default class BlaxSync extends Plugin {
     this.addCommand({ id: 'sync-now', name: 'Sync now', callback: () => { void this.runSync() } })
     this.addCommand({ id: 'sync-allow-deletions', name: 'Sync now and allow large deletions', callback: () => { void this.runSync({ allowDeletions: true }) } })
     this.addCommand({ id: 'setup', name: 'Run setup wizard', callback: () => this.openWizard() })
+    this.addCommand({ id: 'add-device', name: 'Add another device (setup link and QR code)', callback: () => this.openAddDevice() })
+    // obsidian://blax-sync-setup?d=… from a QR code or a pasted link
+    this.registerObsidianProtocolHandler(PROTOCOL_ACTION, params => { new JoinModal(this.app, this, params.d ?? null).open() })
     this.addSettingTab(new BlaxSyncSettingTab(this.app, this))
 
     this.app.workspace.onLayoutReady(() => {
@@ -53,7 +58,13 @@ export default class BlaxSync extends Plugin {
     if (this.changeTimer) window.clearTimeout(this.changeTimer)
   }
 
-  openWizard() { new SetupWizard(this.app, this).open() }
+  wizard: SetupWizard | null = null
+  openWizard() { this.wizard?.close(); this.wizard = new SetupWizard(this.app, this); this.wizard.open() }
+  openJoin(data: string | null = null) { new JoinModal(this.app, this, data).open() }
+  openAddDevice() {
+    if (!this.settings.configured) { this.openWizard(); return }
+    new AddDeviceModal(this.app, this).open()
+  }
 
   async loadSettings() {
     const data = ((await this.loadData()) ?? {}) as Partial<BlaxSyncSettings>

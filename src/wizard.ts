@@ -26,7 +26,7 @@ export class SetupWizard extends Modal {
   }
 
   onOpen() { this.render() }
-  onClose() { this.contentEl.empty() }
+  onClose() { this.contentEl.empty(); if (this.plugin.wizard === this) this.plugin.wizard = null }
 
   private render() {
     const el = this.contentEl
@@ -44,7 +44,11 @@ export class SetupWizard extends Modal {
   }
 
   private source(el: HTMLElement) {
-    el.createEl('p', { text: 'Where should this vault sync to?' })
+    new Setting(el)
+      .setName('Another device already syncs?')
+      .setDesc('Open "Add another device" there and scan its QR code, or paste its setup link here.')
+      .addButton(b => b.setButtonText('Use a setup link').onClick(() => { this.close(); this.plugin.openJoin() }))
+    el.createEl('p', { text: 'Or set up a new sync: where should this vault sync to?' })
     new Setting(el)
       .setName('Storage')
       .setDesc('WebDAV works with Nextcloud, ownCloud, rclone serve webdav, Synology, most NAS boxes and many hosters. More backends will follow.')

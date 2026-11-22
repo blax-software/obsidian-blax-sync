@@ -33,7 +33,12 @@ export class BlaxSyncSettingTab extends PluginSettingTab {
       .setName('Status')
       .setDesc(s.configured ? `${this.plugin.statusText()} · WebDAV ${s.webdav.url} → ${s.webdav.folder}` : 'Not set up yet.')
       .addButton(b => b.setButtonText(s.configured ? 'Run setup again' : 'Set up').onClick(() => this.plugin.openWizard()))
-      .addButton(b => b.setButtonText('Sync now').setCta().setDisabled(!s.configured).onClick(() => this.plugin.runSync()))
+      .addButton(b => b.setButtonText('Sync now').setCta().setDisabled(!s.configured).onClick(() => { void this.plugin.runSync() }))
+
+    new Setting(containerEl)
+      .setName('Add another device')
+      .setDesc('Shows a QR code and a setup link with a one-time code, so the next device needs no typing.')
+      .addButton(b => b.setButtonText('Show QR code').setDisabled(!s.configured).onClick(() => this.plugin.openAddDevice()))
 
     new Setting(containerEl)
       .setName('Sync plugins and settings')
