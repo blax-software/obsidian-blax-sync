@@ -3,7 +3,7 @@
   "name": "Blax Sync",
   "version": "0.1.0",
   "minAppVersion": "1.5.0",
-  "description": "Sync your vault, and optionally its plugins and settings, to your own WebDAV server. Three-step setup wizard, content-hash change detection, nothing is ever hard-deleted.",
+  "description": "Sync your vault, plugins and settings to your own WebDAV server. Set up in three steps, add more devices with a QR code. Edits are never missed and nothing is ever hard-deleted.",
   "author": "Blax Software",
   "authorUrl": "https://blax.at",
   "isDesktopOnly": false

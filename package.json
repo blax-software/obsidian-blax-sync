@@ -1,7 +1,7 @@
 {
   "name": "obsidian-blax-sync",
   "version": "0.1.0",
-  "description": "Obsidian plugin: sync a vault and, optionally, its plugins and settings to your own WebDAV server, set up with a three-step wizard.",
+  "description": "Sync your vault, plugins and settings to your own WebDAV server. Set up in three steps, add more devices with a QR code. Edits are never missed and nothing is ever hard-deleted.",
   "main": "main.js",
   "type": "module",
   "scripts": {
@@ -28,7 +28,10 @@
     "esbuild": "^0.25.0",
     "eslint": "^10.15.0",
     "eslint-plugin-obsidianmd": "^0.6.0",
+    "jsqr": "^1.4.0",
     "obsidian": "latest",
+    "playwright-core": "^1.65.1",
+    "pngjs": "^7.0.0",
     "typescript": "^5.6.0",
     "typescript-eslint": "^8.73.0",
     "vitest": "^3.0.0"
