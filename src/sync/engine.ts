@@ -9,6 +9,7 @@
 import { hash } from './hash'
 import { conflictPath, plan, type Hashes } from './plan'
 import { META_DIR } from './filter'
+import { mergeJson } from './merge'
 import type { LocalFs, LocalState, Manifest, ManifestEntry, Op, Remote, SyncResult } from './types'
 
 export const MANIFEST = `${META_DIR}/manifest.json`
@@ -166,6 +167,18 @@ export async function sync(o: EngineOptions): Promise<SyncResult> {
         return
       }
       case 'conflict': {
+        if (isConfig(p)) {
+          // Settings: merge JSON, otherwise take the server's version (see merge.ts)
+          const theirs = await getRemote(p)
+          const merged = p.endsWith('.json') ? mergeJson(dec.decode(await getLocal(p)), dec.decode(theirs)) : null
+          const data = merged === null ? theirs : enc.encode(merged).buffer
+          const h = await hash(data)
+          if (h !== local.get(p)) { await o.local.write(p, data); result.configChanged = true }
+          if (h !== remote.get(p)) await upload(p, data, h)
+          else touched.set(p, remoteEntries.get(p) ?? stamp(h, data.byteLength))
+          await recordBase(p, h)
+          return
+        }
         // Keep both: the remote version lands next to the local one on every device,
         // the local version stays under the original name.
         const theirs = await getRemote(p)

@@ -35,9 +35,10 @@ export function globToRegExp(glob: string): RegExp {
 /** Folders a scan can skip entirely: nothing inside them can pass the file filter. */
 export function makeDirFilter(o: FilterOptions): (dir: string) => boolean {
   const cfg = o.configDir.replace(/\/+$/, '')
+  const own = `${cfg}/plugins/${o.pluginId}`
   const userDirs = o.ignore.map(g => g.trim()).filter(g => g.endsWith('/**')).map(g => globToRegExp(g.slice(0, -3)))
   return (dir: string) => {
-    if (['.trash', '.git', META_DIR].some(d => dir === d || dir.startsWith(d + '/'))) return true
+    if (['.trash', '.git', META_DIR, own].some(d => dir === d || dir.startsWith(d + '/'))) return true
     if (dir === cfg || dir.startsWith(cfg + '/')) {
       if (!o.syncConfig) return true
       const inner = dir.slice(cfg.length + 1)
@@ -50,17 +51,17 @@ export function makeDirFilter(o: FilterOptions): (dir: string) => boolean {
 export function makeFilter(o: FilterOptions): (path: string) => boolean {
   const user = o.ignore.map(g => g.trim()).filter(Boolean).map(globToRegExp)
   const cfg = o.configDir.replace(/\/+$/, '') + '/'
-  // This plugin's own folder syncs only its settings: its state is per device, and copying
-  // its code would make it update itself, which Obsidian's policies forbid.
+  // This plugin's own folder never syncs: copying its code would make it update itself
+  // (Obsidian's policies forbid that), its state is per device, and its settings hold the
+  // server URL, which can differ per device (LAN address at home, public one on the phone).
   const ownDir = `plugins/${o.pluginId}/`
-  const ownSettings = `${ownDir}data.json`
   return (path: string) => {
     if (ALWAYS_IGNORED.some(r => r.test(path))) return false
     if (user.some(r => r.test(path))) return false
     if (path.startsWith(cfg)) {
       if (!o.syncConfig) return false
       const inner = path.slice(cfg.length)
-      if (inner.startsWith(ownDir) && inner !== ownSettings) return false
+      if (inner.startsWith(ownDir)) return false
       if (CONFIG_IGNORED.some(r => r.test(inner))) return false
     }
     return true

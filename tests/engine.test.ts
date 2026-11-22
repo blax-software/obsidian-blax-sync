@@ -128,6 +128,21 @@ describe('sync between two devices', () => {
     expect([...remote.files.keys()].filter(p => p.startsWith('.obsidian'))).toEqual([])
   })
 
+  it('a new device adopts the shared plugins and settings instead of making conflict copies', async () => {
+    const { A, B } = pair(
+      { '.obsidian/community-plugins.json': '["blax-sync","x"]', '.obsidian/app.json': '{"vimMode":true,"spellcheck":false}', '.obsidian/plugins/x/main.js': 'js' },
+      { '.obsidian/community-plugins.json': '["blax-sync"]', '.obsidian/app.json': '{"spellcheck":true,"newOnly":1}' })
+    await A.run()
+    const r = await B.run()
+    expect(r.conflicts).toEqual([])
+    expect(JSON.parse(B.fs.text('.obsidian/community-plugins.json')!)).toEqual(['blax-sync', 'x'])
+    expect(JSON.parse(B.fs.text('.obsidian/app.json')!)).toEqual({ spellcheck: false, newOnly: 1, vimMode: true })
+    expect(r.configChanged).toBe(true)
+    expect([...B.fs.files.keys()].some(p => p.includes('.conflict-'))).toBe(false)
+    await A.run()
+    expect(JSON.parse(A.fs.text('.obsidian/app.json')!)).toEqual({ spellcheck: false, newOnly: 1, vimMode: true })
+  })
+
   it('merges manifests when two devices finish around the same time', async () => {
     const { A, B, remote } = pair({ 'a.md': 'a' }, { 'b.md': 'b' })
     await A.run(); await B.run(); await A.run()

@@ -57,13 +57,14 @@ describe('filter', () => {
     ['notes/a.md', true], ['Private/diary.md', false], ['x.tmp', false], ['dir/x.tmp', true],
     ['.trash/old.md', false], ['.blax-sync/manifest.json', false], ['.obsidian/app.json', true],
     ['.obsidian/workspace.json', false], ['.obsidian/plugins/blax-sync/state.json', false],
-    ['.obsidian/plugins/blax-sync/data.json', true], ['.obsidian/plugins/blax-sync/main.js', false],
+    ['.obsidian/plugins/blax-sync/data.json', false], ['.obsidian/plugins/blax-sync/main.js', false],
     ['.obsidian/plugins/blax-sync/manifest.json', false], ['.obsidian/plugins/x/main.js', true],
     ['_remotely-save-metadata-on-remote.json', false],
   ])('%s -> %s', (p, ok) => expect(f(p)).toBe(ok))
-  it('never skips a folder that holds syncable files (own plugin folder keeps data.json)', () => {
+  it('skips only folders that hold nothing syncable', () => {
     const d = makeDirFilter({ configDir: '.obsidian', syncConfig: true, ignore: ['Private/**', '*.tmp'], pluginId: 'blax-sync' })
-    expect(d('.obsidian/plugins/blax-sync')).toBe(false)
+    expect(d('.obsidian/plugins/blax-sync')).toBe(true)
+    expect(d('.obsidian/plugins/other')).toBe(false)
     expect(d('.obsidian/plugins/x/cache')).toBe(true)
     expect(d('.trash')).toBe(true)
     expect(d('Private')).toBe(true)
