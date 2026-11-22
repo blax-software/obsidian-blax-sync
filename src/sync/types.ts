@@ -77,4 +77,6 @@ export interface SyncResult {
   conflicts: string[]
   configChanged: boolean
   errors: string[]
+  /** Dry runs only: what a real run would do, nothing applied. */
+  planned?: Op[]
 }

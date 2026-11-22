@@ -143,6 +143,17 @@ describe('sync between two devices', () => {
     expect(JSON.parse(A.fs.text('.obsidian/app.json')!)).toEqual({ spellcheck: false, newOnly: 1, vimMode: true })
   })
 
+  it('a dry run plans without touching either side', async () => {
+    const { A, B, remote } = pair({ 'a.md': 'A' }, { 'b.md': 'B', 'a.md': 'other' })
+    await A.run()
+    const before = new Map(remote.files), localBefore = new Map(B.fs.files)
+    const r = await sync({ local: B.fs, remote, state: B.state, filter: filter(), configDir: '.obsidian', dryRun: true })
+    expect(r.planned?.map(o => `${o.kind} ${o.path}`).sort()).toEqual(['conflict a.md', 'upload b.md'])
+    expect(remote.files).toEqual(before)
+    expect(B.fs.files).toEqual(localBefore)
+    expect(B.state.base).toEqual({})
+  })
+
   it('merges manifests when two devices finish around the same time', async () => {
     const { A, B, remote } = pair({ 'a.md': 'a' }, { 'b.md': 'b' })
     await A.run(); await B.run(); await A.run()

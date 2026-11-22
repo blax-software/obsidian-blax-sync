@@ -1,5 +1,6 @@
 // A second "device" for the mobile test: the plugin's own engine, a folder on disk as vault.
-//   node desk-sim.mjs <vaultDir> <davUrl> <folder>     one sync, prints the result
+//   node desk-sim.mjs <vaultDir> <davUrl> <folder> [--dry-run]   one sync (or a plan), prints the result
+// Credentials: DAV_USER / DAV_PASS (default u / p, the e2e server).
 import { promises as fs } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { sync } from '../src/sync/engine'
@@ -8,6 +9,7 @@ import { WebdavRemote, type RequestFn } from '../src/sync/webdav'
 import type { LocalFs, LocalState } from '../src/sync/types'
 
 const [root, url, folder] = process.argv.slice(2)
+const dryRun = process.argv.includes('--dry-run')
 const statePath = join(root, '..', 'desk-sim-state.json')
 const disk: LocalFs = {
   async list() {
@@ -35,8 +37,8 @@ const request: RequestFn = async r => {
 let state: LocalState = { deviceId: 'desk-sim', base: {} }
 try { state = JSON.parse(await fs.readFile(statePath, 'utf8')) } catch {}
 const r = await sync({
-  local: disk, remote: new WebdavRemote({ url, username: 'u', password: 'p', folder }, request), state,
+  local: disk, remote: new WebdavRemote({ url, username: process.env.DAV_USER ?? 'u', password: process.env.DAV_PASS ?? 'p', folder }, request), state, dryRun,
   filter: makeFilter({ configDir: '.obsidian', syncConfig: true, ignore: [], pluginId: 'blax-sync' }), configDir: '.obsidian',
-  saveState: async s => { await fs.writeFile(statePath, JSON.stringify(s)) },
+  saveState: async s => { if (!dryRun) await fs.writeFile(statePath, JSON.stringify(s)) },
 })
 console.log(JSON.stringify(r))

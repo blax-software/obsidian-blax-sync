@@ -29,6 +29,8 @@ export interface EngineOptions {
   filter: (path: string) => boolean
   configDir: string
   allowDeletions?: boolean
+  /** Plan only: read both sides, return the operations, change nothing anywhere. */
+  dryRun?: boolean
   now?: () => Date
   /** Called after every few operations and at the end, to persist state. */
   saveState?: (state: LocalState) => Promise<void>
@@ -83,6 +85,8 @@ export async function sync(o: EngineOptions): Promise<SyncResult> {
 
   const base: Hashes = new Map(Object.entries(state.base).filter(([p]) => o.filter(p)).map(([p, e]) => [p, e.h]))
   const ops = plan(local, remote, base)
+
+  if (o.dryRun) return { ...result, planned: ops }
 
   const trashLocal = ops.filter(op => op.kind === 'trash-local').length
   const trashRemote = ops.filter(op => op.kind === 'trash-remote').length
