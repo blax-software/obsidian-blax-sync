@@ -1,0 +1,25 @@
+{
+  "name": "obsidian-blax-sync",
+  "version": "0.1.0",
+  "description": "Obsidian plugin: sync a vault and, optionally, its plugins and settings to your own WebDAV server, set up with a three-step wizard.",
+  "main": "main.js",
+  "type": "module",
+  "scripts": {
+    "build": "node esbuild.config.mjs production",
+    "dev": "node esbuild.config.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "check": "tsc --noEmit && vitest run"
+  },
+  "keywords": ["obsidian", "obsidian-plugin", "sync", "webdav"],
+  "author": "Blax Software (https://blax.at)",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "builtin-modules": "^4.0.0",
+    "esbuild": "^0.25.0",
+    "obsidian": "latest",
+    "typescript": "^5.6.0",
+    "vitest": "^3.0.0"
+  }
+}
