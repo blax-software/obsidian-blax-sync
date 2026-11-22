@@ -80,7 +80,10 @@ export class WebdavRemote implements Remote {
   }
 
   private async call(method: string, url: string, headers: Record<string, string> = {}, body?: ArrayBuffer | string) {
-    return this.request({ url, method, headers: { Authorization: this.auth, ...headers }, body })
+    // no-cache makes Chromium (Obsidian desktop) bypass its HTTP cache. Without it a GET is
+    // revalidated by ETag, and servers that keep the ETag through a same-size edit (rclone
+    // --no-modtime) answer 304, so the old content comes back from the cache.
+    return this.request({ url, method, headers: { Authorization: this.auth, 'Cache-Control': 'no-cache', Pragma: 'no-cache', ...headers }, body })
   }
 
   private rel(href: string): string | null {

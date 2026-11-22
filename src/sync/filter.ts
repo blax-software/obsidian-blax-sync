@@ -32,6 +32,21 @@ export function globToRegExp(glob: string): RegExp {
   return new RegExp(`^${re}$`)
 }
 
+/** Folders a scan can skip entirely: nothing inside them can pass the file filter. */
+export function makeDirFilter(o: FilterOptions): (dir: string) => boolean {
+  const cfg = o.configDir.replace(/\/+$/, '')
+  const userDirs = o.ignore.map(g => g.trim()).filter(g => g.endsWith('/**')).map(g => globToRegExp(g.slice(0, -3)))
+  return (dir: string) => {
+    if (['.trash', '.git', META_DIR].some(d => dir === d || dir.startsWith(d + '/'))) return true
+    if (dir === cfg || dir.startsWith(cfg + '/')) {
+      if (!o.syncConfig) return true
+      const inner = dir.slice(cfg.length + 1)
+      if (/(^|\/)(cache|node_modules)$/.test(inner)) return true
+    }
+    return userDirs.some(r => r.test(dir))
+  }
+}
+
 export function makeFilter(o: FilterOptions): (path: string) => boolean {
   const user = o.ignore.map(g => g.trim()).filter(Boolean).map(globToRegExp)
   const cfg = o.configDir.replace(/\/+$/, '') + '/'

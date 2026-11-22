@@ -3,7 +3,7 @@ import { BlaxSyncSettingTab, DEFAULT_SETTINGS, type BlaxSyncSettings } from './s
 import { SetupWizard } from './wizard'
 import { ObsidianFs } from './obsidian-fs'
 import { obsidianRequest } from './request'
-import { makeFilter } from './sync/filter'
+import { makeDirFilter, makeFilter } from './sync/filter'
 import { DeletionGuardError, sync } from './sync/engine'
 import { WebdavRemote } from './sync/webdav'
 import type { LocalState, SyncResult } from './sync/types'
@@ -16,6 +16,7 @@ export default class BlaxSync extends Plugin {
   private running = false
   private queued = false
   private lastRun: { at: Date; ok: boolean; text: string } | null = null
+  private lastResult: SyncResult | null = null
   private statusEl: HTMLElement | null = null
   private timer: number | null = null
   private changeTimer: number | null = null
@@ -99,8 +100,11 @@ export default class BlaxSync extends Plugin {
     return this.lastRun.ok ? `Synced ${t}` : `Sync failed ${t}: ${this.lastRun.text}`
   }
   private renderStatus() {
-    this.statusEl?.setText(this.settings.configured ? `⇅ ${this.statusText().split(':')[0]}` : '⇅ Blax Sync: not set up')
-    if (this.statusEl) this.statusEl.title = this.statusText()
+    if (!this.statusEl) return
+    const short = !this.settings.configured ? 'Blax Sync: not set up'
+      : this.running || !this.lastRun || this.lastRun.ok ? this.statusText() : 'Sync failed'
+    this.statusEl.setText(`⇅ ${short}`)
+    this.statusEl.title = this.statusText()
   }
 
   async runSync(opts: { allowDeletions?: boolean } = {}) {
@@ -109,8 +113,9 @@ export default class BlaxSync extends Plugin {
     this.running = true
     this.renderStatus()
     const configDir = this.app.vault.configDir
-    const filter = makeFilter({ configDir, syncConfig: this.settings.syncConfig, ignore: this.settings.ignore, pluginId: this.manifest.id })
-    const skipDir = (dir: string) => !filter(`${dir}/\u0000probe`)   // don't descend into ignored trees
+    const fopts = { configDir, syncConfig: this.settings.syncConfig, ignore: this.settings.ignore, pluginId: this.manifest.id }
+    const filter = makeFilter(fopts)
+    const skipDir = makeDirFilter(fopts)
     this.fs = new ObsidianFs(this.app.vault.adapter, skipDir)
     try {
       const result = await sync({
@@ -135,6 +140,7 @@ export default class BlaxSync extends Plugin {
   }
 
   private report(r: SyncResult) {
+    this.lastResult = r
     const parts = [
       r.downloaded && `${r.downloaded} down`, r.uploaded && `${r.uploaded} up`,
       r.trashedLocal && `${r.trashedLocal} removed here`, r.trashedRemote && `${r.trashedRemote} removed on server`,

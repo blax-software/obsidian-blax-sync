@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { parseMultistatus, WebdavRemote, type HttpRequest } from '../src/sync/webdav'
-import { globToRegExp, makeFilter } from '../src/sync/filter'
+import { globToRegExp, makeDirFilter, makeFilter } from '../src/sync/filter'
 
 const rclone = `<?xml version="1.0" encoding="UTF-8"?><D:multistatus xmlns:D="DAV:"><D:response><D:href>/Obsidian%20Vault/</D:href><D:propstat><D:prop><D:resourcetype><D:collection xmlns:D="DAV:"/></D:resourcetype></D:prop><D:status>HTTP/1.1 200 OK</D:status></D:propstat></D:response><D:response><D:href>/Obsidian%20Vault/Blax/Blax%20Software%20&amp;%20Consulting.md</D:href><D:propstat><D:prop><D:resourcetype></D:resourcetype><D:getcontentlength>1031</D:getcontentlength></D:prop><D:status>HTTP/1.1 200 OK</D:status></D:propstat></D:response></D:multistatus>`
 
@@ -61,6 +61,16 @@ describe('filter', () => {
     ['.obsidian/plugins/blax-sync/manifest.json', false], ['.obsidian/plugins/x/main.js', true],
     ['_remotely-save-metadata-on-remote.json', false],
   ])('%s -> %s', (p, ok) => expect(f(p)).toBe(ok))
+  it('never skips a folder that holds syncable files (own plugin folder keeps data.json)', () => {
+    const d = makeDirFilter({ configDir: '.obsidian', syncConfig: true, ignore: ['Private/**', '*.tmp'], pluginId: 'blax-sync' })
+    expect(d('.obsidian/plugins/blax-sync')).toBe(false)
+    expect(d('.obsidian/plugins/x/cache')).toBe(true)
+    expect(d('.trash')).toBe(true)
+    expect(d('Private')).toBe(true)
+    expect(d('Notes')).toBe(false)
+    const off = makeDirFilter({ configDir: '.obsidian', syncConfig: false, ignore: [], pluginId: 'blax-sync' })
+    expect(off('.obsidian')).toBe(true)
+  })
   it('globs', () => {
     expect(globToRegExp('**/*.png').test('a/b/c.png')).toBe(true)
     expect(globToRegExp('*.png').test('a/c.png')).toBe(false)

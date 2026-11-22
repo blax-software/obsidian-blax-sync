@@ -2,7 +2,7 @@
 // on), and whether plugins and settings sync too. Finishing runs the first sync, which
 // only adds files on both sides and never removes anything.
 
-import { App, Modal, Notice, Setting } from 'obsidian'
+import { App, ButtonComponent, Modal, Notice, Setting } from 'obsidian'
 import type BlaxSync from './main'
 import { WebdavRemote } from './sync/webdav'
 import { obsidianRequest } from './request'
@@ -76,9 +76,11 @@ export class SetupWizard extends Modal {
       status.setText(this.testMessage)
       next()
     }))
-    let nextBtn: HTMLButtonElement | null = null
-    row.addButton(b => { nextBtn = b.buttonEl; b.setButtonText('Next').setCta().setDisabled(!this.tested).onClick(() => { this.step = 3; this.render() }) })
-    const next = () => { if (nextBtn) nextBtn.disabled = !this.tested }
+    // Toggle through the component: it keeps its own disabled flag and ignores clicks
+    // while that is set, whatever the DOM attribute says.
+    let nextBtn: ButtonComponent | null = null
+    row.addButton(b => { nextBtn = b; b.setButtonText('Next').setCta().setDisabled(!this.tested).onClick(() => { if (!this.tested) return; this.step = 3; this.render() }) })
+    const next = () => { nextBtn?.setDisabled(!this.tested) }
   }
 
   private options(el: HTMLElement) {
