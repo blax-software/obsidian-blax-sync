@@ -200,7 +200,7 @@ export async function sync(o: EngineOptions): Promise<SyncResult> {
   // files as unknown to the manifest, hashes them, finds them equal and records them.
   try {
     if (touched.size || JSON.stringify(files) !== JSON.stringify(startManifest.files)) {
-      await o.remote.put(MANIFEST, enc.encode(JSON.stringify(next)).buffer as ArrayBuffer)
+      await o.remote.put(MANIFEST, enc.encode(JSON.stringify(next)).buffer)
     }
   } finally {
     await o.saveState?.(state)

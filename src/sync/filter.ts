@@ -35,14 +35,17 @@ export function globToRegExp(glob: string): RegExp {
 export function makeFilter(o: FilterOptions): (path: string) => boolean {
   const user = o.ignore.map(g => g.trim()).filter(Boolean).map(globToRegExp)
   const cfg = o.configDir.replace(/\/+$/, '') + '/'
-  const ownState = `plugins/${o.pluginId}/state.json`
+  // This plugin's own folder syncs only its settings: its state is per device, and copying
+  // its code would make it update itself, which Obsidian's policies forbid.
+  const ownDir = `plugins/${o.pluginId}/`
+  const ownSettings = `${ownDir}data.json`
   return (path: string) => {
     if (ALWAYS_IGNORED.some(r => r.test(path))) return false
     if (user.some(r => r.test(path))) return false
     if (path.startsWith(cfg)) {
       if (!o.syncConfig) return false
       const inner = path.slice(cfg.length)
-      if (inner === ownState) return false
+      if (inner.startsWith(ownDir) && inner !== ownSettings) return false
       if (CONFIG_IGNORED.some(r => r.test(inner))) return false
     }
     return true

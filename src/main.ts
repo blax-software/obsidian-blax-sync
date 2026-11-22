@@ -28,15 +28,15 @@ export default class BlaxSync extends Plugin {
     await this.loadState()
     this.statusEl = this.addStatusBarItem()
     this.renderStatus()
-    this.addRibbonIcon('refresh-cw', 'Blax Sync: sync now', () => this.runSync())
-    this.addCommand({ id: 'sync-now', name: 'Sync now', callback: () => this.runSync() })
-    this.addCommand({ id: 'sync-allow-deletions', name: 'Sync now and allow large deletions', callback: () => this.runSync({ allowDeletions: true }) })
+    this.addRibbonIcon('refresh-cw', 'Blax Sync: sync now', () => { void this.runSync() })
+    this.addCommand({ id: 'sync-now', name: 'Sync now', callback: () => { void this.runSync() } })
+    this.addCommand({ id: 'sync-allow-deletions', name: 'Sync now and allow large deletions', callback: () => { void this.runSync({ allowDeletions: true }) } })
     this.addCommand({ id: 'setup', name: 'Run setup wizard', callback: () => this.openWizard() })
     this.addSettingTab(new BlaxSyncSettingTab(this.app, this))
 
     this.app.workspace.onLayoutReady(() => {
       if (!this.settings.configured) this.openWizard()
-      else window.setTimeout(() => this.runSync(), 3000)
+      else window.setTimeout(() => { void this.runSync() }, 3000)
       // Registered either way: onVaultChange ignores events until setup is done.
       const onChange = (f: TAbstractFile) => this.onVaultChange(f.path)
       this.registerEvent(this.app.vault.on('modify', onChange))
@@ -55,7 +55,7 @@ export default class BlaxSync extends Plugin {
   openWizard() { new SetupWizard(this.app, this).open() }
 
   async loadSettings() {
-    const data = (await this.loadData()) ?? {}
+    const data = ((await this.loadData()) ?? {}) as Partial<BlaxSyncSettings>
     this.settings = { ...DEFAULT_SETTINGS, ...data, webdav: { ...DEFAULT_SETTINGS.webdav, ...(data.webdav ?? {}) } }
   }
   async saveSettings() { await this.saveData(this.settings) }
@@ -64,7 +64,7 @@ export default class BlaxSync extends Plugin {
   private async loadState() {
     try {
       if (await this.app.vault.adapter.exists(this.statePath)) {
-        this.state = JSON.parse(await this.app.vault.adapter.read(this.statePath))
+        this.state = JSON.parse(await this.app.vault.adapter.read(this.statePath)) as LocalState
       }
     } catch { this.state = { deviceId: '', base: {} } }
     if (!this.state.deviceId) {
@@ -81,7 +81,7 @@ export default class BlaxSync extends Plugin {
     if (this.timer) window.clearInterval(this.timer)
     this.timer = null
     const m = this.settings.intervalMinutes
-    if (this.settings.configured && m > 0) this.timer = this.registerInterval(window.setInterval(() => this.runSync(), m * 60_000))
+    if (this.settings.configured && m > 0) this.timer = this.registerInterval(window.setInterval(() => { void this.runSync() }, m * 60_000))
   }
 
   private onVaultChange(path: string) {
@@ -89,7 +89,7 @@ export default class BlaxSync extends Plugin {
     const wrote = this.fs?.recentWrites.get(path)
     if (wrote && Date.now() - wrote < 10_000) return   // our own download
     if (this.changeTimer) window.clearTimeout(this.changeTimer)
-    this.changeTimer = window.setTimeout(() => this.runSync(), CHANGE_DELAY_MS)
+    this.changeTimer = window.setTimeout(() => { void this.runSync() }, CHANGE_DELAY_MS)
   }
 
   statusText(): string {
@@ -130,7 +130,7 @@ export default class BlaxSync extends Plugin {
     } finally {
       this.running = false
       this.renderStatus()
-      if (this.queued) { this.queued = false; window.setTimeout(() => this.runSync(), 1000) }
+      if (this.queued) { this.queued = false; window.setTimeout(() => { void this.runSync() }, 1000) }
     }
   }
 
@@ -143,8 +143,11 @@ export default class BlaxSync extends Plugin {
     if (r.conflicts.length) new Notice(`Blax Sync: ${r.conflicts.length} conflict(s), both versions kept:\n${r.conflicts.slice(0, 5).join('\n')}`, 15_000)
     if (r.errors.length) new Notice(`Blax Sync: ${r.errors.length} file(s) failed, first: ${r.errors[0]}`, 10_000)
     if (r.configChanged) {
-      const n = new Notice('Blax Sync: plugins or settings changed. Reload Obsidian to apply them. (Click to reload)', 0)
-      n.noticeEl.addEventListener('click', () => (this.app as unknown as { commands: { executeCommandById(id: string): void } }).commands.executeCommandById('app:reload'))
+      const app = this.app as unknown as { commands: { executeCommandById(id: string): void } }
+      new Notice(createFragment(f => {
+        f.appendText('Blax Sync: plugins or settings changed. Reload Obsidian to apply them. ')
+        f.createEl('button', { text: 'Reload now' }, b => { b.onclick = () => app.commands.executeCommandById('app:reload') })
+      }), 0)
     }
   }
 }

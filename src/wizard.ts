@@ -88,18 +88,20 @@ export class SetupWizard extends Modal {
       .addToggle(t => t.setValue(this.draft.syncConfig).onChange(v => { this.draft.syncConfig = v }))
     el.createEl('p', { text: 'The first sync merges this vault with the server folder: files that exist on only one side are copied over, files that differ are kept twice (".conflict-…" copy). Nothing gets deleted.' })
     this.nav(el, {
-      back: true, next: 'Finish and sync', onNext: async () => {
-        const s = this.plugin.settings
-        s.backend = this.draft.backend
-        s.webdav = { ...this.draft.webdav }
-        s.syncConfig = this.draft.syncConfig
-        s.configured = true
-        await this.plugin.saveSettings()
-        this.close()
-        new Notice('Blax Sync: first sync started.')
-        await this.plugin.runSync()
-        this.plugin.reschedule()
-      },
+      back: true, next: 'Finish and sync', onNext: () => { void this.finish() },
     })
+  }
+
+  private async finish() {
+    const s = this.plugin.settings
+    s.backend = this.draft.backend
+    s.webdav = { ...this.draft.webdav }
+    s.syncConfig = this.draft.syncConfig
+    s.configured = true
+    await this.plugin.saveSettings()
+    this.close()
+    new Notice('Blax Sync: first sync started.')
+    await this.plugin.runSync()
+    this.plugin.reschedule()
   }
 }

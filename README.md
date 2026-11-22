@@ -23,6 +23,14 @@ Server URL examples: Nextcloud `https://<host>/remote.php/dav/files/<user>`, rcl
 
 On start, every 5 minutes (configurable, 0 = off), 20 seconds after you stop editing, and on demand: ribbon icon, command "Sync now", or the button in the settings. The status bar shows the last result.
 
+## Network use
+
+The plugin connects only to the WebDAV server you enter in the setup wizard, to list, read and write the files of your vault there. It sends no telemetry and contacts no other server. Your password is stored in the plugin's settings file inside your vault.
+
+## Plugin sync and updates
+
+With plugin sync on, the files of the community plugins you installed (and their settings) are copied between your own devices through your own server, the way your notes are. Blax Sync never downloads plugins from anywhere else, and it doesn't copy its own code: each device gets Blax Sync updates from Obsidian's community plugin browser.
+
 ## Good to know
 
 - Credentials are stored in the plugin's `data.json` in your vault's config folder, like every other plugin's settings. With plugin sync on, that file reaches your other devices through your own server.

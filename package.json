@@ -9,17 +9,29 @@
     "dev": "node esbuild.config.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "check": "tsc --noEmit && vitest run"
+    "check": "tsc --noEmit && eslint src && vitest run",
+    "release": "node scripts/release.mjs",
+    "lint": "eslint src"
   },
-  "keywords": ["obsidian", "obsidian-plugin", "sync", "webdav"],
+  "keywords": [
+    "obsidian",
+    "obsidian-plugin",
+    "sync",
+    "webdav"
+  ],
   "author": "Blax Software (https://blax.at)",
   "license": "MIT",
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/node": "^22.0.0",
     "builtin-modules": "^4.0.0",
     "esbuild": "^0.25.0",
+    "eslint": "^10.15.0",
+    "eslint-plugin-obsidianmd": "^0.6.0",
     "obsidian": "latest",
     "typescript": "^5.6.0",
+    "typescript-eslint": "^8.73.0",
     "vitest": "^3.0.0"
-  }
+  },
+  "packageManager": "pnpm@10.15.1"
 }

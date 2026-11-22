@@ -57,7 +57,9 @@ describe('filter', () => {
     ['notes/a.md', true], ['Private/diary.md', false], ['x.tmp', false], ['dir/x.tmp', true],
     ['.trash/old.md', false], ['.blax-sync/manifest.json', false], ['.obsidian/app.json', true],
     ['.obsidian/workspace.json', false], ['.obsidian/plugins/blax-sync/state.json', false],
-    ['.obsidian/plugins/blax-sync/data.json', true], ['_remotely-save-metadata-on-remote.json', false],
+    ['.obsidian/plugins/blax-sync/data.json', true], ['.obsidian/plugins/blax-sync/main.js', false],
+    ['.obsidian/plugins/blax-sync/manifest.json', false], ['.obsidian/plugins/x/main.js', true],
+    ['_remotely-save-metadata-on-remote.json', false],
   ])('%s -> %s', (p, ok) => expect(f(p)).toBe(ok))
   it('globs', () => {
     expect(globToRegExp('**/*.png').test('a/b/c.png')).toBe(true)
