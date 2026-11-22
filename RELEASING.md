@@ -16,7 +16,7 @@ Submission works through the developer dashboard on community.obsidian.md (since
 
 ### Release
 
-- [ ] (2026-11-22) Release the tested version: `pnpm release 0.2.0`. **Done when:** https://github.com/blax-software/obsidian-blax-sync/releases shows the version with `main.js` and `manifest.json`.
+- [x] (2026-11-22) Release the tested version: `pnpm release 0.2.0`. **Done when:** https://github.com/blax-software/obsidian-blax-sync/releases shows the version with `main.js` and `manifest.json`.
 - [ ] (2026-11-22) Submit on https://community.obsidian.md: sign in with Fabian's Obsidian account, link the GitHub account `justsomexanda`, choose `blax-software/obsidian-blax-sync`, complete the dashboard steps. **Owner:** Fabian (submission needs his own Obsidian account). **Done when:** the automated review shows no errors (results come within minutes; use "Review branch" on the entry page to re-check a fix without a release).
 
 ### Post-release
